@@ -138,6 +138,41 @@ The app stores local data on device/browser using AsyncStorage:
 - selected city filter
 - selected property detail view
 
+## Screenshots / Demo
+
+Add app images/GIFs under a folder like `docs/images/` and reference them below.
+
+Suggested files:
+
+- `docs/images/home.png`
+- `docs/images/property-details.png`
+- `docs/images/booking-flow.png`
+- `docs/images/contact-faq.png`
+- `docs/images/demo.gif`
+
+Example markdown (already ready, replace files with your real captures):
+
+```md
+### App Preview
+
+![Home](docs/images/home.png)
+![Property Details](docs/images/property-details.png)
+![Booking Flow](docs/images/booking-flow.png)
+![Contact & FAQ](docs/images/contact-faq.png)
+
+### Demo GIF
+
+![Demo](docs/images/demo.gif)
+```
+
+Optional side-by-side layout:
+
+```md
+| Home | Property Details |
+|------|------------------|
+| ![Home](docs/images/home.png) | ![Details](docs/images/property-details.png) |
+```
+
 ## Repository
 
 GitHub: https://github.com/satselva07/MyEstate
