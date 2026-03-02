@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "MyEstate",
-    "slug": "MyEstate",
+    "name": "SeRa Properties",
+    "slug": "sera-properties",
     "version": "1.0.0",
+    "scheme": "seraproperties",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -12,9 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sera.properties"
     },
     "android": {
+      "package": "com.sera.properties",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
