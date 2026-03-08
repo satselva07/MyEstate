@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SeRa Properties | Booking</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>SeRa Properties</h1>
+        <p>Book your stay and send property queries.</p>
+      </div>
+      <div class="meta">
+        Public demo • GitHub Pages ready • <a class="admin-link" href="admin.html">Admin</a>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Properties</h2>
+          <select id="cityFilter">
+            <option value="All Cities">All Cities</option>
+          </select>
+        </div>
+        <div id="propertiesList" class="cards"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Book Property</h2>
+        </div>
+        <form id="bookingForm" class="form">
+          <label>
+            Property
+            <select id="propertyId" required></select>
+          </label>
+
+          <div class="row">
+            <label>
+              Check-in
+              <input id="checkIn" type="date" required />
+            </label>
+            <label>
+              Check-out
+              <input id="checkOut" type="date" required />
+            </label>
+          </div>
+
+          <div class="row">
+            <label>
+              Name
+              <input id="guestName" required />
+            </label>
+            <label>
+              Mobile
+              <input id="guestPhone" required />
+            </label>
+          </div>
+
+          <label>
+            Email
+            <input id="guestEmail" type="email" required />
+          </label>
+
+          <label>
+            Comments
+            <textarea id="bookingNote" rows="3" placeholder="Purpose, guests count, special requests" required></textarea>
+          </label>
+
+          <button type="submit">Submit Booking Request</button>
+          <p id="bookingMessage" class="muted"></p>
+        </form>
+
+        <div class="panel-header subhead">
+          <h2>Contact / Query</h2>
+        </div>
+        <form id="inquiryForm" class="form">
+          <div class="row">
+            <label>
+              Name
+              <input id="inqName" required />
+            </label>
+            <label>
+              Mobile
+              <input id="inqPhone" required />
+            </label>
+          </div>
+          <label>
+            Email
+            <input id="inqEmail" type="email" required />
+          </label>
+          <label>
+            Query
+            <textarea id="inqMessage" rows="4" required></textarea>
+          </label>
+          <button type="submit">Submit Query</button>
+          <p id="inquiryMessage" class="muted"></p>
+        </form>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

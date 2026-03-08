@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SeRa Admin Console</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>SeRa Admin Console</h1>
+        <p>Review booking requests and inquiries.</p>
+      </div>
+      <div class="meta"><a class="admin-link" href="index.html">Public Site</a></div>
+    </header>
+
+    <main class="layout single">
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Admin Login</h2>
+        </div>
+        <form id="adminLoginForm" class="form">
+          <div class="row">
+            <label>
+              Email
+              <input id="adminEmail" type="email" required />
+            </label>
+            <label>
+              Password
+              <input id="adminPassword" type="password" required />
+            </label>
+          </div>
+          <div class="row">
+            <button type="submit">Sign In</button>
+            <button type="button" id="logoutBtn" class="secondary hidden">Sign Out</button>
+          </div>
+          <p id="authMessage" class="muted"></p>
+        </form>
+      </section>
+
+      <section id="adminData" class="panel hidden">
+        <div class="panel-header">
+          <h2>Bookings</h2>
+          <button id="refreshBtn" type="button">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Created</th>
+                <th>Property</th>
+                <th>Dates</th>
+                <th>Guest</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Action</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="panel-header subhead">
+          <h2>Inquiries</h2>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Created</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody id="inquiriesBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>
