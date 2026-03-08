@@ -26,7 +26,7 @@ create table if not exists public.bookings (
   constraint booking_date_order check (check_in < check_out)
 );
 
--- Prevent overlapping active bookings for same property
+-- Prevent overlapping confirmed bookings for same property
 alter table public.bookings
   drop constraint if exists bookings_no_overlap;
 
@@ -36,7 +36,7 @@ alter table public.bookings
     property_id with =,
     daterange(check_in, check_out, '[)') with &&
   )
-  where (status in ('pending','confirmed'));
+  where (status in ('confirmed'));
 
 create table if not exists public.inquiries (
   id uuid primary key default gen_random_uuid(),
