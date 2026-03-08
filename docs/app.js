@@ -41,6 +41,8 @@ const ui = {
   propertyId: document.getElementById("propertyId"),
   checkIn: document.getElementById("checkIn"),
   checkOut: document.getElementById("checkOut"),
+  availabilityGrid: document.getElementById("availabilityGrid"),
+  availabilityNote: document.getElementById("availabilityNote"),
   guestName: document.getElementById("guestName"),
   guestPhone: document.getElementById("guestPhone"),
   guestEmail: document.getElementById("guestEmail"),
@@ -52,6 +54,10 @@ const ui = {
   inqEmail: document.getElementById("inqEmail"),
   inqMessage: document.getElementById("inqMessage"),
   inquiryMessage: document.getElementById("inquiryMessage"),
+};
+
+const availabilityState = {
+  blockedRanges: [],
 };
 
 function message(target, text, type = "") {
@@ -73,6 +79,116 @@ function getSupabaseClient() {
   if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return null;
   if (!window.supabase || typeof window.supabase.createClient !== "function") return null;
   return window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+}
+
+function toDateOnly(value) {
+  return new Date(`${value}T00:00:00`);
+}
+
+function toDateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isDateBlocked(dateKey, ranges) {
+  const day = toDateOnly(dateKey);
+  return ranges.some((range) => {
+    const start = toDateOnly(range.check_in);
+    const end = toDateOnly(range.check_out);
+    return day >= start && day < end;
+  });
+}
+
+function hasRangeConflict(startDate, endDate, ranges) {
+  if (!startDate || !endDate) return false;
+
+  const start = toDateOnly(startDate);
+  const end = toDateOnly(endDate);
+  return ranges.some((range) => {
+    const rangeStart = toDateOnly(range.check_in);
+    const rangeEnd = toDateOnly(range.check_out);
+    return start < rangeEnd && end > rangeStart;
+  });
+}
+
+function renderAvailabilityGrid(ranges) {
+  if (!ui.availabilityGrid) return;
+  const daysToShow = 21;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  ui.availabilityGrid.innerHTML = "";
+  for (let offset = 0; offset < daysToShow; offset += 1) {
+    const day = new Date(today);
+    day.setDate(today.getDate() + offset);
+    const dayKey = toDateKey(day);
+    const isBlocked = isDateBlocked(dayKey, ranges);
+
+    const node = document.createElement("div");
+    node.className = `availability-day ${isBlocked ? "full" : "available"}`;
+    node.textContent = `${day.toLocaleDateString("en-IN", { month: "short", day: "numeric" })} · ${isBlocked ? "Full" : "Open"}`;
+    ui.availabilityGrid.appendChild(node);
+  }
+}
+
+function validateSelectedRange() {
+  const checkIn = sanitize(ui.checkIn.value);
+  const checkOut = sanitize(ui.checkOut.value);
+  if (!checkIn || !checkOut) {
+    message(ui.availabilityNote, "Choose check-in and check-out to validate availability.");
+    return false;
+  }
+
+  if (hasRangeConflict(checkIn, checkOut, availabilityState.blockedRanges)) {
+    message(
+      ui.availabilityNote,
+      "Selected range includes full dates for this property. Please choose different dates.",
+      "err"
+    );
+    return true;
+  }
+
+  message(ui.availabilityNote, "Selected range is available.", "ok");
+  return false;
+}
+
+async function refreshAvailability() {
+  const propertyId = sanitize(ui.propertyId.value);
+  if (!propertyId) return;
+
+  const supabaseClient = getSupabaseClient();
+  if (!supabaseClient) {
+    availabilityState.blockedRanges = [];
+    renderAvailabilityGrid([]);
+    message(ui.availabilityNote, "Live availability unavailable. Booking validation still works at submit.");
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("booked_ranges")
+    .select("check_in, check_out")
+    .eq("property_id", propertyId)
+    .order("check_in", { ascending: true });
+
+  if (error) {
+    availabilityState.blockedRanges = [];
+    renderAvailabilityGrid([]);
+    message(ui.availabilityNote, "Availability preview unavailable right now.", "err");
+    return;
+  }
+
+  availabilityState.blockedRanges = Array.isArray(data) ? data : [];
+  renderAvailabilityGrid(availabilityState.blockedRanges);
+
+  if (!availabilityState.blockedRanges.length) {
+    message(ui.availabilityNote, "All upcoming dates appear available for this property.", "ok");
+  } else {
+    message(ui.availabilityNote, "Red dates are fully booked. Green dates are available.");
+  }
+
+  validateSelectedRange();
 }
 
 function renderProperties(city = "All Cities") {
@@ -139,6 +255,15 @@ async function submitBooking(event) {
 
   if (!isDateRangeValid(payload.check_in, payload.check_out)) {
     message(ui.bookingMessage, "Check-out must be after check-in.", "err");
+    return;
+  }
+
+  if (hasRangeConflict(payload.check_in, payload.check_out, availabilityState.blockedRanges)) {
+    message(
+      ui.bookingMessage,
+      "This property is sold out for one or more selected dates. Please choose different dates.",
+      "err"
+    );
     return;
   }
 
@@ -221,8 +346,14 @@ function init() {
   initPropertySelect();
   renderProperties();
 
+  ui.propertyId.addEventListener("change", refreshAvailability);
+  ui.checkIn.addEventListener("change", validateSelectedRange);
+  ui.checkOut.addEventListener("change", validateSelectedRange);
+
   ui.bookingForm.addEventListener("submit", submitBooking);
   ui.inquiryForm.addEventListener("submit", submitInquiry);
+
+  refreshAvailability();
 }
 
 init();

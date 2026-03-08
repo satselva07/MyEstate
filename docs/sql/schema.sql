@@ -47,9 +47,66 @@ create table if not exists public.inquiries (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.booked_ranges (
+  id uuid primary key default gen_random_uuid(),
+  booking_id uuid unique not null references public.bookings(id) on delete cascade,
+  property_id text not null references public.properties(id) on delete cascade,
+  check_in date not null,
+  check_out date not null,
+  status text not null check (status in ('pending','confirmed')),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_booked_ranges_property_dates
+on public.booked_ranges (property_id, check_in, check_out);
+
+create or replace function public.sync_booked_ranges()
+returns trigger
+language plpgsql
+as $$
+begin
+  if (tg_op = 'DELETE') then
+    delete from public.booked_ranges where booking_id = old.id;
+    return old;
+  end if;
+
+  if (new.status in ('pending','confirmed')) then
+    insert into public.booked_ranges (booking_id, property_id, check_in, check_out, status)
+    values (new.id, new.property_id, new.check_in, new.check_out, new.status)
+    on conflict (booking_id)
+    do update set
+      property_id = excluded.property_id,
+      check_in = excluded.check_in,
+      check_out = excluded.check_out,
+      status = excluded.status;
+  else
+    delete from public.booked_ranges where booking_id = new.id;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_sync_booked_ranges on public.bookings;
+create trigger trg_sync_booked_ranges
+after insert or update or delete on public.bookings
+for each row execute function public.sync_booked_ranges();
+
+insert into public.booked_ranges (booking_id, property_id, check_in, check_out, status)
+select id, property_id, check_in, check_out, status
+from public.bookings
+where status in ('pending','confirmed')
+on conflict (booking_id)
+do update set
+  property_id = excluded.property_id,
+  check_in = excluded.check_in,
+  check_out = excluded.check_out,
+  status = excluded.status;
+
 alter table public.properties enable row level security;
 alter table public.bookings enable row level security;
 alter table public.inquiries enable row level security;
+alter table public.booked_ranges enable row level security;
 
 -- Public read properties
 drop policy if exists "public read properties" on public.properties;
@@ -71,6 +128,13 @@ create policy "public insert inquiries"
 on public.inquiries for insert
 to anon
 with check (true);
+
+-- Public can read non-sensitive availability data
+drop policy if exists "public read booked ranges" on public.booked_ranges;
+create policy "public read booked ranges"
+on public.booked_ranges for select
+to anon
+using (true);
 
 -- Optional: authenticated admins can read data in Supabase dashboard/API
 drop policy if exists "auth read bookings" on public.bookings;
