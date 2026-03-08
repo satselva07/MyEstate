@@ -176,16 +176,21 @@ async function signIn(event) {
   const email = String(ui.adminEmail.value || "").trim();
   const password = String(ui.adminPassword.value || "");
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    setSignedInUI(false);
-    setMessage(error.message || "Sign-in failed.", "err");
-    return;
-  }
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setSignedInUI(false);
+      setMessage(error.message || "Sign-in failed.", "err");
+      return;
+    }
 
-  setSignedInUI(true);
-  setMessage("Signed in.", "ok");
-  await refreshData();
+    setSignedInUI(true);
+    setMessage("Signed in.", "ok");
+    await refreshData();
+  } catch (error) {
+    setSignedInUI(false);
+    setMessage(error?.message || "Sign-in failed due to network/auth configuration issue.", "err");
+  }
 }
 
 async function signOut() {
@@ -203,19 +208,30 @@ async function init() {
     return;
   }
 
-  const { data } = await supabase.auth.getSession();
-  const isSignedIn = Boolean(data?.session);
-  setSignedInUI(isSignedIn);
-  if (isSignedIn) {
-    setMessage("Signed in.", "ok");
-    await refreshData();
-  } else {
-    setMessage("Sign in with Supabase admin user.");
-  }
-
   ui.adminLoginForm.addEventListener("submit", signIn);
   ui.logoutBtn.addEventListener("click", signOut);
   ui.refreshBtn.addEventListener("click", refreshData);
+
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      setSignedInUI(false);
+      setMessage(error.message || "Unable to read session.", "err");
+      return;
+    }
+
+    const isSignedIn = Boolean(data?.session);
+    setSignedInUI(isSignedIn);
+    if (isSignedIn) {
+      setMessage("Signed in.", "ok");
+      await refreshData();
+    } else {
+      setMessage("Sign in with Supabase admin user.");
+    }
+  } catch (error) {
+    setSignedInUI(false);
+    setMessage(error?.message || "Supabase auth initialization failed.", "err");
+  }
 }
 
 init();
