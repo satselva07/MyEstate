@@ -336,12 +336,20 @@ async function submitBooking(event) {
       String(error.code || "") === "23P01" ||
       errorMessage.includes("bookings_no_overlap") ||
       errorMessageLower.includes("overlap") ||
-      errorMessageLower.includes("conflicting key value violates exclusion constraint") ||
-      errorMessageLower.includes("violates row-level security policy")
+      errorMessageLower.includes("conflicting key value violates exclusion constraint")
     ) {
       message(
         ui.bookingMessage,
         "This property is sold out for one or more selected dates. Please choose different dates.",
+        "err"
+      );
+      return;
+    }
+
+    if (errorMessageLower.includes("violates row-level security policy")) {
+      message(
+        ui.bookingMessage,
+        "Booking service is temporarily unavailable. Please try again in a minute.",
         "err"
       );
       return;

@@ -63,6 +63,8 @@ on public.booked_ranges (property_id, check_in, check_out);
 create or replace function public.sync_booked_ranges()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 begin
   if (tg_op = 'DELETE') then
