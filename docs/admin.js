@@ -45,7 +45,7 @@ function getSupabaseClient() {
   return window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
 }
 
-const supabase = getSupabaseClient();
+const supabaseClient = getSupabaseClient();
 
 function setSignedInUI(isSignedIn) {
   ui.adminData.classList.toggle("hidden", !isSignedIn);
@@ -53,7 +53,7 @@ function setSignedInUI(isSignedIn) {
 }
 
 async function loadBookings() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("bookings")
     .select("id, created_at, property_id, check_in, check_out, guest_name, guest_phone, guest_email, status, notes")
     .order("created_at", { ascending: false })
@@ -107,7 +107,7 @@ async function loadBookings() {
 
       button.disabled = true;
       try {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabaseClient
           .from("bookings")
           .update({ status: nextStatus })
           .eq("id", id);
@@ -125,7 +125,7 @@ async function loadBookings() {
 }
 
 async function loadInquiries() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("inquiries")
     .select("created_at, name, email, phone, message")
     .order("created_at", { ascending: false })
@@ -153,7 +153,7 @@ async function loadInquiries() {
 }
 
 async function refreshData() {
-  if (!supabase) {
+  if (!supabaseClient) {
     setMessage("Supabase config missing. Update config.js.", "err");
     return;
   }
@@ -169,7 +169,7 @@ async function refreshData() {
 
 async function signIn(event) {
   event.preventDefault();
-  if (!supabase) {
+  if (!supabaseClient) {
     setMessage("Supabase config missing. Update config.js.", "err");
     return;
   }
@@ -178,7 +178,7 @@ async function signIn(event) {
   const password = String(ui.adminPassword.value || "");
 
   try {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (error) {
       setSignedInUI(false);
       setMessage(error.message || "Sign-in failed.", "err");
@@ -195,8 +195,8 @@ async function signIn(event) {
 }
 
 async function signOut() {
-  if (!supabase) return;
-  await supabase.auth.signOut();
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
   setSignedInUI(false);
   setMessage("Signed out.");
   ui.bookingsBody.innerHTML = "";
@@ -204,7 +204,7 @@ async function signOut() {
 }
 
 async function init() {
-  if (!supabase) {
+  if (!supabaseClient) {
     setMessage("Supabase config missing. Update config.js.", "err");
     return;
   }
@@ -214,7 +214,7 @@ async function init() {
   ui.refreshBtn.addEventListener("click", refreshData);
 
   try {
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await supabaseClient.auth.getSession();
     if (error) {
       setSignedInUI(false);
       setMessage(error.message || "Unable to read session.", "err");

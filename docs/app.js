@@ -142,8 +142,8 @@ async function submitBooking(event) {
     return;
   }
 
-  const supabase = getSupabaseClient();
-  if (!supabase) {
+  const supabaseClient = getSupabaseClient();
+  if (!supabaseClient) {
     message(
       ui.bookingMessage,
       "Supabase config missing. Create config.js from config.example.js.",
@@ -152,7 +152,7 @@ async function submitBooking(event) {
     return;
   }
 
-  const { error } = await supabase.from("bookings").insert(payload);
+  const { error } = await supabaseClient.from("bookings").insert(payload);
   if (error) {
     if (
       String(error.message || "").includes("bookings_no_overlap") ||
@@ -190,8 +190,8 @@ async function submitInquiry(event) {
     return;
   }
 
-  const supabase = getSupabaseClient();
-  if (!supabase) {
+  const supabaseClient = getSupabaseClient();
+  if (!supabaseClient) {
     message(
       ui.inquiryMessage,
       "Supabase config missing. Create config.js from config.example.js.",
@@ -200,7 +200,7 @@ async function submitInquiry(event) {
     return;
   }
 
-  const { error } = await supabase.from("inquiries").insert(payload);
+  const { error } = await supabaseClient.from("inquiries").insert(payload);
   if (error) {
     message(ui.inquiryMessage, error.message || "Query submission failed.", "err");
     return;
