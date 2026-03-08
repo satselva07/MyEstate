@@ -41,7 +41,6 @@ const ui = {
   propertyId: document.getElementById("propertyId"),
   checkIn: document.getElementById("checkIn"),
   checkOut: document.getElementById("checkOut"),
-  availabilityGrid: document.getElementById("availabilityGrid"),
   availabilityNote: document.getElementById("availabilityNote"),
   guestName: document.getElementById("guestName"),
   guestPhone: document.getElementById("guestPhone"),
@@ -145,7 +144,11 @@ function initDatePickers() {
 
   const baseOptions = {
     dateFormat: "Y-m-d",
+    altInput: true,
+    altFormat: "d M Y",
     minDate: "today",
+    allowInput: false,
+    clickOpens: true,
     disableMobile: true,
   };
 
@@ -179,26 +182,6 @@ function hasRangeConflict(startDate, endDate, ranges) {
   });
 }
 
-function renderAvailabilityGrid(ranges) {
-  if (!ui.availabilityGrid) return;
-  const daysToShow = 21;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  ui.availabilityGrid.innerHTML = "";
-  for (let offset = 0; offset < daysToShow; offset += 1) {
-    const day = new Date(today);
-    day.setDate(today.getDate() + offset);
-    const dayKey = toDateKey(day);
-    const isBlocked = isDateBlocked(dayKey, ranges);
-
-    const node = document.createElement("div");
-    node.className = `availability-day ${isBlocked ? "full" : "available"}`;
-    node.textContent = `${day.toLocaleDateString("en-IN", { month: "short", day: "numeric" })} · ${isBlocked ? "Full" : "Open"}`;
-    ui.availabilityGrid.appendChild(node);
-  }
-}
-
 function validateSelectedRange() {
   const checkIn = sanitize(ui.checkIn.value);
   const checkOut = sanitize(ui.checkOut.value);
@@ -227,32 +210,32 @@ async function refreshAvailability() {
   const supabaseClient = getSupabaseClient();
   if (!supabaseClient) {
     availabilityState.blockedRanges = [];
-    renderAvailabilityGrid([]);
-    message(ui.availabilityNote, "Live availability unavailable. Booking validation still works at submit.");
+    updatePickersAvailability();
+    message(ui.availabilityNote, "Calendar availability is unavailable right now.", "err");
     return;
   }
 
   const { data, error } = await supabaseClient
     .from("booked_ranges")
-    .select("check_in, check_out")
+    .select("check_in, check_out, status")
     .eq("property_id", propertyId)
+    .eq("status", "confirmed")
     .order("check_in", { ascending: true });
 
   if (error) {
     availabilityState.blockedRanges = [];
-    renderAvailabilityGrid([]);
+    updatePickersAvailability();
     message(ui.availabilityNote, "Availability preview unavailable right now.", "err");
     return;
   }
 
   availabilityState.blockedRanges = Array.isArray(data) ? data : [];
-  renderAvailabilityGrid(availabilityState.blockedRanges);
   updatePickersAvailability();
 
   if (!availabilityState.blockedRanges.length) {
-    message(ui.availabilityNote, "All upcoming dates appear available for this property.", "ok");
+    message(ui.availabilityNote, "Click date fields to open month calendar. All dates are currently available.", "ok");
   } else {
-    message(ui.availabilityNote, "Red dates are fully booked. Green dates are available.");
+    message(ui.availabilityNote, "Click date fields to open month calendar. Red = full, green = available.");
   }
 
   validateSelectedRange();

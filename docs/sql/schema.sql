@@ -53,7 +53,7 @@ create table if not exists public.booked_ranges (
   property_id text not null references public.properties(id) on delete cascade,
   check_in date not null,
   check_out date not null,
-  status text not null check (status in ('pending','confirmed')),
+  status text not null check (status in ('confirmed')),
   created_at timestamptz not null default now()
 );
 
@@ -70,7 +70,7 @@ begin
     return old;
   end if;
 
-  if (new.status in ('pending','confirmed')) then
+  if (new.status in ('confirmed')) then
     insert into public.booked_ranges (booking_id, property_id, check_in, check_out, status)
     values (new.id, new.property_id, new.check_in, new.check_out, new.status)
     on conflict (booking_id)
@@ -95,7 +95,7 @@ for each row execute function public.sync_booked_ranges();
 insert into public.booked_ranges (booking_id, property_id, check_in, check_out, status)
 select id, property_id, check_in, check_out, status
 from public.bookings
-where status in ('pending','confirmed')
+where status in ('confirmed')
 on conflict (booking_id)
 do update set
   property_id = excluded.property_id,
