@@ -52,36 +52,42 @@ alter table public.bookings enable row level security;
 alter table public.inquiries enable row level security;
 
 -- Public read properties
-create policy if not exists "public read properties"
+drop policy if exists "public read properties" on public.properties;
+create policy "public read properties"
 on public.properties for select
 to anon
 using (true);
 
 -- Public can create booking requests
-create policy if not exists "public insert bookings"
+drop policy if exists "public insert bookings" on public.bookings;
+create policy "public insert bookings"
 on public.bookings for insert
 to anon
 with check (true);
 
 -- Public can create inquiries
-create policy if not exists "public insert inquiries"
+drop policy if exists "public insert inquiries" on public.inquiries;
+create policy "public insert inquiries"
 on public.inquiries for insert
 to anon
 with check (true);
 
 -- Optional: authenticated admins can read data in Supabase dashboard/API
-create policy if not exists "auth read bookings"
+drop policy if exists "auth read bookings" on public.bookings;
+create policy "auth read bookings"
 on public.bookings for select
 to authenticated
 using (true);
 
-create policy if not exists "auth update bookings status"
+drop policy if exists "auth update bookings status" on public.bookings;
+create policy "auth update bookings status"
 on public.bookings for update
 to authenticated
 using (true)
 with check (status in ('pending','confirmed','cancelled'));
 
-create policy if not exists "auth read inquiries"
+drop policy if exists "auth read inquiries" on public.inquiries;
+create policy "auth read inquiries"
 on public.inquiries for select
 to authenticated
 using (true);
