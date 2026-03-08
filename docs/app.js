@@ -154,19 +154,25 @@ async function submitBooking(event) {
 
   const { error } = await supabaseClient.from("bookings").insert(payload);
   if (error) {
+    const errorMessage = String(error.message || "");
+    const errorMessageLower = errorMessage.toLowerCase();
+
     if (
-      String(error.message || "").includes("bookings_no_overlap") ||
-      String(error.message || "").toLowerCase().includes("overlap")
+      String(error.code || "") === "23P01" ||
+      errorMessage.includes("bookings_no_overlap") ||
+      errorMessageLower.includes("overlap") ||
+      errorMessageLower.includes("conflicting key value violates exclusion constraint") ||
+      errorMessageLower.includes("violates row-level security policy")
     ) {
       message(
         ui.bookingMessage,
-        "This property is already booked for overlapping dates. Choose different dates.",
+        "This property is sold out for one or more selected dates. Please choose different dates.",
         "err"
       );
       return;
     }
 
-    message(ui.bookingMessage, error.message || "Booking failed.", "err");
+    message(ui.bookingMessage, errorMessage || "Booking failed.", "err");
     return;
   }
 
