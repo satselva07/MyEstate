@@ -58,6 +58,8 @@ const ui = {
 
 const availabilityState = {
   blockedRanges: [],
+  checkInPicker: null,
+  checkOutPicker: null,
 };
 
 function message(target, text, type = "") {
@@ -85,6 +87,13 @@ function toDateOnly(value) {
   return new Date(`${value}T00:00:00`);
 }
 
+function dateToKey(dateObj) {
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const day = String(dateObj.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function toDateKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -98,6 +107,63 @@ function isDateBlocked(dateKey, ranges) {
     const start = toDateOnly(range.check_in);
     const end = toDateOnly(range.check_out);
     return day >= start && day < end;
+  });
+}
+
+function updatePickersAvailability() {
+  const pickerConfig = {
+    disable: [(dateObj) => isDateBlocked(dateToKey(dateObj), availabilityState.blockedRanges)],
+    onDayCreate: (_dObj, _dStr, _fp, dayElem) => {
+      const dateObj = dayElem.dateObj;
+      if (!dateObj) return;
+
+      const dateKey = dateToKey(dateObj);
+      dayElem.classList.remove("available-date", "full-date");
+      if (isDateBlocked(dateKey, availabilityState.blockedRanges)) {
+        dayElem.classList.add("full-date");
+      } else {
+        dayElem.classList.add("available-date");
+      }
+    },
+  };
+
+  if (availabilityState.checkInPicker) {
+    availabilityState.checkInPicker.set("disable", pickerConfig.disable);
+    availabilityState.checkInPicker.set("onDayCreate", pickerConfig.onDayCreate);
+    availabilityState.checkInPicker.redraw();
+  }
+
+  if (availabilityState.checkOutPicker) {
+    availabilityState.checkOutPicker.set("disable", pickerConfig.disable);
+    availabilityState.checkOutPicker.set("onDayCreate", pickerConfig.onDayCreate);
+    availabilityState.checkOutPicker.redraw();
+  }
+}
+
+function initDatePickers() {
+  if (!window.flatpickr) return;
+
+  const baseOptions = {
+    dateFormat: "Y-m-d",
+    minDate: "today",
+    disableMobile: true,
+  };
+
+  availabilityState.checkInPicker = window.flatpickr(ui.checkIn, {
+    ...baseOptions,
+    onChange: (_selectedDates, dateStr) => {
+      if (availabilityState.checkOutPicker) {
+        availabilityState.checkOutPicker.set("minDate", dateStr || "today");
+      }
+      validateSelectedRange();
+    },
+  });
+
+  availabilityState.checkOutPicker = window.flatpickr(ui.checkOut, {
+    ...baseOptions,
+    onChange: () => {
+      validateSelectedRange();
+    },
   });
 }
 
@@ -181,6 +247,7 @@ async function refreshAvailability() {
 
   availabilityState.blockedRanges = Array.isArray(data) ? data : [];
   renderAvailabilityGrid(availabilityState.blockedRanges);
+  updatePickersAvailability();
 
   if (!availabilityState.blockedRanges.length) {
     message(ui.availabilityNote, "All upcoming dates appear available for this property.", "ok");
@@ -345,6 +412,7 @@ function init() {
   initFilters();
   initPropertySelect();
   renderProperties();
+  initDatePickers();
 
   ui.propertyId.addEventListener("change", refreshAvailability);
   ui.checkIn.addEventListener("change", validateSelectedRange);
