@@ -41,6 +41,7 @@ function escapeHtml(value) {
 function getSupabaseClient() {
   const cfg = window.APP_CONFIG || {};
   if (!cfg.supabaseUrl || !cfg.supabaseAnonKey) return null;
+  if (!window.supabase || typeof window.supabase.createClient !== "function") return null;
   return window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
 }
 
